@@ -132,7 +132,7 @@ Find all the predictor variables in the training set that begin with IL. Perform
 
 ```r
 IL_Colnames = grep("^IL", colnames(training), value=TRUE,ignore.case=TRUE)
-pcaMod <- preProcess(training[,IL_Colnames], method="pca", thresh=0.8)
+pcaMod <- preProcess(training[,IL_Colnames], method="pca", thresh=0.9)
 pcaMod
 ```
 
@@ -145,7 +145,7 @@ pcaMod
 ##   - principal component signal extraction (12)
 ##   - scaled (12)
 ## 
-## PCA needed 7 components to capture 80 percent of the variance
+## PCA needed 9 components to capture 90 percent of the variance
 ```
 
 ---

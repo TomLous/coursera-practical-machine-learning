@@ -199,7 +199,7 @@ testing = adData[-inTrain,]</code></pre>
 <div id="answer-3" class="section level3">
 <h3>Answer</h3>
 <pre class="r"><code>IL_Colnames = grep(&quot;^IL&quot;, colnames(training), value=TRUE,ignore.case=TRUE)
-pcaMod &lt;- preProcess(training[,IL_Colnames], method=&quot;pca&quot;, thresh=0.8)
+pcaMod &lt;- preProcess(training[,IL_Colnames], method=&quot;pca&quot;, thresh=0.9)
 pcaMod</code></pre>
 <pre><code>## Created from 251 samples and 12 variables
 ## 
@@ -209,7 +209,7 @@ pcaMod</code></pre>
 ##   - principal component signal extraction (12)
 ##   - scaled (12)
 ## 
-## PCA needed 7 components to capture 80 percent of the variance</code></pre>
+## PCA needed 9 components to capture 90 percent of the variance</code></pre>
 <hr />
 </div>
 </div>

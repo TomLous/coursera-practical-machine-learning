@@ -130,7 +130,7 @@ Find all the predictor variables in the training set that begin with IL. Perform
 
 ```{r}
 IL_Colnames = grep("^IL", colnames(training), value=TRUE,ignore.case=TRUE)
-pcaMod <- preProcess(training[,IL_Colnames], method="pca", thresh=0.8)
+pcaMod <- preProcess(training[,IL_Colnames], method="pca", thresh=0.9)
 pcaMod
 ```
 
