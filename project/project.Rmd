@@ -1,0 +1,95 @@
+---
+title: "Prediction"
+author: "Tom Lous"
+date: "17 May 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, fig.width=10, fig.height=5)
+options(width=120)
+```
+
+## Executive Summary
+
+Intro 
+
+* Question
+
+We'll take the following steps:
+
+- Process the data, for use of this project
+- Explore the data, especially focussing on the two paramaters we are interested in 
+- Model selection, where we try different models to help us answer our questions
+- Model examination, to see wether our best model holds up to our standards
+- A Conclusion where we answer the questions based on the data
+
+## Processing
+
+First change 'am' to  factor (0 = automatic, 1 = manual)
+And make cylinders a factor as well (since it is not continious)
+
+```{r}
+training.raw <- read.csv("pml-training.csv")
+testing.raw <- read.csv("pml-testing.csv")
+```
+
+## Exploratory data analyses 
+
+Look at the dimensions & head of the dataset to get an idea
+```{r}
+# Res 1
+dim(training.raw)
+
+# Res 2 - excluded because excessivness
+# head(training.raw)
+
+# Res 3 - excluded because excessivness
+#str(training.raw)
+
+# Res 4 - excluded because excessivness
+#summary(training.raw)
+```
+
+
+What we see is a lot of data with NA / empty values. Let's remove those
+
+```{r}
+maxNAPerc = 20
+maxNACount <- nrow(training.raw) / 100 * maxNAPerc
+removeColumns <- which(colSums(is.na(training.raw) | training.raw=="") > maxNACount)
+training.cleaned01 <- training.raw[,-removeColumns]
+```
+
+Also remove all time related data, since we won't use those
+
+```{r}
+removeColumns <- grep("timestamp", names(training.cleaned01))
+training.cleaned02 <- training.cleaned01[,-c(1, removeColumns )]
+```
+
+Then convert all factors to integers
+```{r}
+training.cleaned03 <- data.frame(data.matrix(training.cleaned02))
+```
+
+Finally set the dataset to be explored
+
+```{r}
+training.cleaned <- training.cleaned03
+```
+
+
+## Exploratory data analyses 
+
+Since the test set provided is the the ultimate validation set, we will split the current training in a test and train set to work with.
+
+```{r}
+set.seed(19791108)
+library(caret)
+
+partition <- createDataPartition(y=training.cleaned$classe, p=0.75, list=FALSE)
+training.subSetTrain <- training.cleaned[partition, ]
+training.subSetTest <- training.cleaned[-partition, ]
+```
+
