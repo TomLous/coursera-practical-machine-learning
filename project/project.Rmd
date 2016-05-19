@@ -179,5 +179,6 @@ rfMod.pca.subset.testing.acc <- round(1-sum(rfMod.pca.subset$test$confusion[, 'c
 paste0("Accuracy on testing: ",rfMod.pca.subset.testing.acc)
 proc.time() - start
 
-
 ```
+
+This concludes that nor PCA nor removing correlated columns nor it's combination has a positive of the accuracy (or the process time for that matter)
