@@ -70,7 +70,9 @@ training.cleaned02 <- training.cleaned01[,-c(1, removeColumns )]
 
 Then convert all factors to integers
 ```{r}
+classeLevels <- levels(training.cleaned02$classe)
 training.cleaned03 <- data.frame(data.matrix(training.cleaned02))
+training.cleaned03$classe <- factor(training.cleaned03$classe, labels=classeLevels)
 ```
 
 Finally set the dataset to be explored
@@ -88,8 +90,94 @@ Since the test set provided is the the ultimate validation set, we will split th
 set.seed(19791108)
 library(caret)
 
+classeIndex <- which(names(training.cleaned) == "classe")
+
 partition <- createDataPartition(y=training.cleaned$classe, p=0.75, list=FALSE)
 training.subSetTrain <- training.cleaned[partition, ]
 training.subSetTest <- training.cleaned[-partition, ]
 ```
 
+Let's identify variables with high correlations in our set, so we can exclude them from the pca or training
+```{r}
+library(corrplot)
+correlationMatrix <- cor(training.subSetTrain[, -classeIndex])
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.9, exact=TRUE)
+excludeColumns <- c(highlyCorrelated, classeIndex)
+corrplot(correlationMatrix, method="color", type="lower", order="hclust", tl.cex=0.70, tl.col="black", tl.srt = 45, diag = FALSE)
+```
+
+Let's preprocess with some PCA
+```{r}
+pcaPreProcess.all <- preProcess(training.subSetTrain[, -classeIndex], method = "pca", thresh = 0.99)
+training.subSetTrain.pca.all <- predict(pcaPreProcess.all, training.subSetTrain[, -classeIndex])
+training.subSetTest.pca.all <- predict(pcaPreProcess.all, training.subSetTest[, -classeIndex])
+
+pcaPreProcess.subset <- preProcess(training.subSetTrain[, -excludeColumns], method = "pca", thresh = 0.99)
+training.subSetTrain.pca.subset <- predict(pcaPreProcess.subset, training.subSetTrain[, -excludeColumns])
+training.subSetTest.pca.subset <- predict(pcaPreProcess.subset, training.subSetTest[, -excludeColumns])
+```
+
+Now let's do some actual Random Forest training
+```{r}
+library(randomForest)
+
+ntree <- 100 #This is enough for great accuracy (trust me, I'm an engineer)
+
+start <- proc.time()
+rfMod.cleaned <- randomForest(
+  x=training.subSetTrain[, -classeIndex], 
+  y=training.subSetTrain$classe,
+  xtest=training.subSetTest[, -classeIndex], 
+  ytest=training.subSetTest$classe, 
+  ntree=ntree) #do.trace=TRUE
+rfMod.cleaned
+rfMod.cleaned.training.acc <- round(1-sum(rfMod.cleaned$confusion[, 'class.error']),3)
+paste0("Accuracy on training: ",rfMod.cleaned.training.acc)
+rfMod.cleaned.testing.acc <- round(1-sum(rfMod.cleaned$test$confusion[, 'class.error']),3)
+paste0("Accuracy on testing: ",rfMod.cleaned.testing.acc)
+proc.time() - start
+
+start <- proc.time()
+rfMod.exclude <- randomForest(
+  x=training.subSetTrain[, -excludeColumns], 
+  y=training.subSetTrain$classe,
+  xtest=training.subSetTest[, -excludeColumns], 
+  ytest=training.subSetTest$classe, 
+  ntree=ntree) #do.trace=TRUE
+rfMod.exclude
+rfMod.exclude.training.acc <- round(1-sum(rfMod.exclude$confusion[, 'class.error']),3)
+paste0("Accuracy on training: ",rfMod.exclude.training.acc)
+rfMod.exclude.testing.acc <- round(1-sum(rfMod.exclude$test$confusion[, 'class.error']),3)
+paste0("Accuracy on testing: ",rfMod.exclude.testing.acc)
+proc.time() - start
+
+start <- proc.time()
+rfMod.pca.all <- randomForest(
+  x=training.subSetTrain.pca.all, 
+  y=training.subSetTrain$classe,
+  xtest=training.subSetTest.pca.all, 
+  ytest=training.subSetTest$classe, 
+  ntree=ntree) #do.trace=TRUE
+rfMod.pca.all
+rfMod.pca.all.training.acc <- round(1-sum(rfMod.pca.all$confusion[, 'class.error']),3)
+paste0("Accuracy on training: ",rfMod.pca.all.training.acc)
+rfMod.pca.all.testing.acc <- round(1-sum(rfMod.pca.all$test$confusion[, 'class.error']),3)
+paste0("Accuracy on testing: ",rfMod.pca.all.testing.acc)
+proc.time() - start
+
+start <- proc.time()
+rfMod.pca.subset <- randomForest(
+  x=training.subSetTrain.pca.subset, 
+  y=training.subSetTrain$classe,
+  xtest=training.subSetTest.pca.subset, 
+  ytest=training.subSetTest$classe, 
+  ntree=ntree) #do.trace=TRUE
+rfMod.pca.subset
+rfMod.pca.subset.training.acc <- round(1-sum(rfMod.pca.subset$confusion[, 'class.error']),3)
+paste0("Accuracy on training: ",rfMod.pca.subset.training.acc)
+rfMod.pca.subset.testing.acc <- round(1-sum(rfMod.pca.subset$test$confusion[, 'class.error']),3)
+paste0("Accuracy on testing: ",rfMod.pca.subset.testing.acc)
+proc.time() - start
+
+
+```
